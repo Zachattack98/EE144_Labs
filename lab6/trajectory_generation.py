@@ -46,23 +46,24 @@ class Turtlebot():
             self.move_to_point(waypoints[i], waypoints[i+1])
 
     def move_to_point(self, current_waypoint, next_waypoint):
-        self.vel = Twist()
         self.previous_waypoint = [0,0]
         self.previous_velocity = [0,0]
+	self.vel_ref = 0.3
+	self.vel = Twist()
         
         # generate polynomial trajectory and move to current_waypoint      
         # next_waypoint is to help determine the velocity to pass current_waypoint
         #determine boundary conditions for the position for x and y
         px_start = self.previous_waypoint[0]
-        px_end = self.current_waypoint[0]
+        px_end = current_waypoint[0]
 
         py_start = self.previous_waypoint[1]
-        py_end = self.current_waypoint[1]
+        py_end = current_waypoint[1]
 
         #determine boundary  conditions for velocity
         #need to compute the angle of the robot in order to change the x,y velocities
-        vx_start = self.previous_velocity[0]#velocity*cos()
-        vy_start = self.previous_velocity[1]#velocity*sin()
+        vx_start = self.previous_velocity[0]   #velocity*cos()
+        vy_start = self.previous_velocity[1]   #velocity*sin()
 
         #decompose the velocity
         dx = next_waypoint[0] - current_waypoint[0]
@@ -74,7 +75,7 @@ class Turtlebot():
 
         #solve the polynomial coefficient
         #going to get coefficients for x and coefficients for y
-        T = 2
+        T = 2  #any value
 
         coeff_x = self.polynomial_time_scaling_3rd_order(px_start, vx_start, px_end, vx_end, T)
         coeff_y = self.polynomial_time_scaling_3rd_order(py_start, vy_start, py_end, vy_end, T)
@@ -92,12 +93,12 @@ class Turtlebot():
             
             #Code from lab 3 closed loop
             cnt = 0	                            
-	        theta_error = 0	                    #Variable for e(t); compute theta
-	        #while not rospy.is_shutdown():
-		    turn_theta = cnt*(pi/2)		#Variable for turning at each point; 2D means we can stick with pi/2 to rotate 90 degrees.
-		    delta_theta_error = theta_error	    #Temporary variable to store the lastest theta error; compute delta theta (self.pose.theta)
-		    K_p = 3		                
-	        K_d = 0.5
+	    theta_error = 0	                    #Variable for e(t); compute theta
+	    #while not rospy.is_shutdown():
+	    turn_theta = cnt*(pi/2)		#Variable for turning at each point; 2D means we can stick with pi/2 to rotate 90 degrees.
+	    delta_theta_error = theta_error	    #Temporary variable to store the lastest theta error; compute delta theta (self.pose.theta)
+	    K_p = 3		                
+	    K_d = 0.5
 
             if cnt < 2:                       #Condition check to reduce redundant computations
                 theta_error = (turn_theta - self.pose.theta)
@@ -144,14 +145,14 @@ class Turtlebot():
 		    self.rate.sleep()
             
             #Update the previous values
-            px_start = self.current_waypoint[i+1]
-            px_end = self.next_waypoint[i+2]
+            px_start = current_waypoint[i+1]
+            px_end = next_waypoint[i+2]
 
-            py_start = self.current_waypoint[i+2]
-            py_end = self.next_waypoint[i+3]
+            py_start = current_waypoint[i+2]
+            py_end = next_waypoint[i+3]
 
-            vx_start = self.current_velocity[i+1]  #velocity*cos()
-            vy_start = self.current_velocity[i+2]  #velocity*sin()
+            vx_start = current_velocity[i+1]  #velocity*cos()
+            vy_start = current_velocity[i+2]  #velocity*sin()
             
             dx = next_waypoint[0] - current_waypoint[0]
             dy = next_waypoint[1] - current_waypoint[1]
